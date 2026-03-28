@@ -1,0 +1,5 @@
+{
+  "name": "Echo Drift",
+  "description": "A minimalist survival game where you navigate darkness using echo pulses.",
+  "requestFramePermissions": []
+}
