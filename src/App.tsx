@@ -477,8 +477,14 @@ export default function App() {
     const [stress, setStress] = useState(0);
     const [danger, setDanger] = useState(0);
 
-    const startGame = () => {
-        if (audioCtx.state === 'suspended') audioCtx.resume();
+    const startGame = async () => {
+        try {
+            if (audioCtx.state === 'suspended') {
+                await audioCtx.resume();
+            }
+        } catch (e) {
+            console.warn("Audio context resume failed", e);
+        }
         setGameState('playing');
         setEnergy(100);
         setStamina(100);
@@ -564,27 +570,28 @@ export default function App() {
                         initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0, transition: { duration: 1 } }}
                         className="absolute inset-0 flex flex-col items-center justify-center bg-[#050505] z-50"
                     >
-                        <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(0,229,255,0.05)_0%,transparent_50%)]" />
+                        <div className="absolute inset-0 pointer-events-none bg-[radial-gradient(circle_at_center,rgba(0,229,255,0.05)_0%,transparent_50%)]" />
                         <motion.h1 
                             initial={{ y: 20, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ delay: 0.2, duration: 1 }}
-                            className="text-6xl font-light tracking-[0.2em] mb-2 text-white"
+                            className="text-6xl font-light tracking-[0.2em] mb-2 text-white relative z-10"
                         >
                             ECHO DRIFT
                         </motion.h1>
                         <motion.p 
                             initial={{ opacity: 0 }} animate={{ opacity: 0.5 }} transition={{ delay: 1, duration: 1 }}
-                            className="text-sm tracking-widest mb-12"
+                            className="text-sm tracking-widest mb-12 relative z-10"
                         >
                             SENSORY DEPRIVATION PROTOCOL
                         </motion.p>
 
-                        <motion.button
-                            initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 1.5 }}
-                            onClick={startGame}
-                            className="px-8 py-3 border border-white/20 hover:bg-white hover:text-black transition-all duration-500 tracking-[0.3em] text-sm uppercase"
-                        >
-                            Initiate
-                        </motion.button>
+                        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 1.5 }} className="relative z-20">
+                            <button
+                                onClick={startGame}
+                                className="px-8 py-3 border border-white/20 hover:bg-white hover:text-black transition-all duration-500 tracking-[0.3em] text-sm uppercase cursor-pointer pointer-events-auto"
+                            >
+                                Initiate
+                            </button>
+                        </motion.div>
 
                         <motion.div 
                             initial={{ opacity: 0 }} animate={{ opacity: 0.3 }} transition={{ delay: 2 }}
@@ -603,10 +610,10 @@ export default function App() {
                         initial={{ opacity: 0 }} animate={{ opacity: 1 }}
                         className="absolute inset-0 flex flex-col items-center justify-center bg-black z-50"
                     >
-                        <h2 className="text-5xl font-light tracking-[0.3em] text-red-600 mb-8 blur-[1px]">SIGNAL LOST</h2>
+                        <h2 className="text-5xl font-light tracking-[0.3em] text-red-600 mb-8 blur-[1px] relative z-10">SIGNAL LOST</h2>
                         <button
                             onClick={startGame}
-                            className="px-8 py-3 border border-red-900/50 text-red-500 hover:bg-red-900/20 transition-all duration-300 tracking-[0.2em] text-sm uppercase"
+                            className="relative z-20 px-8 py-3 border border-red-900/50 text-red-500 hover:bg-red-900/20 transition-all duration-300 tracking-[0.2em] text-sm uppercase cursor-pointer pointer-events-auto"
                         >
                             Reconnect
                         </button>
