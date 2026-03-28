@@ -99,6 +99,21 @@ function GameScene({ setGameState, setScore, setEnergy }: { setGameState: any, s
         return w;
     }, []);
 
+    const wallsRef = useRef<THREE.InstancedMesh>(null);
+
+    useEffect(() => {
+        if (wallsRef.current) {
+            const dummy = new THREE.Object3D();
+            walls.forEach((wall, i) => {
+                dummy.position.copy(wall.position);
+                dummy.scale.copy(wall.scale);
+                dummy.updateMatrix();
+                wallsRef.current!.setMatrixAt(i, dummy.matrix);
+            });
+            wallsRef.current.instanceMatrix.needsUpdate = true;
+        }
+    }, [walls]);
+
     useEffect(() => {
         camera.position.set(0, 1.5, 0);
         camera.rotation.set(0, 0, 0);
@@ -113,6 +128,10 @@ function GameScene({ setGameState, setScore, setEnergy }: { setGameState: any, s
                 setEnergy(energyRef.current);
                 const newEcho = { id: Date.now(), position: camera.position.clone(), radius: 0, opacity: 1 };
                 echoesRef.current.push(newEcho);
+                // Limit active echoes to prevent performance drops from too many point lights
+                if (echoesRef.current.length > 3) {
+                    echoesRef.current.shift();
+                }
             }
         };
         const handleKeyUp = (e: KeyboardEvent) => { keys.current[e.key.toLowerCase()] = false; };
@@ -201,8 +220,8 @@ function GameScene({ setGameState, setScore, setEnergy }: { setGameState: any, s
 
         // Echoes update
         echoesRef.current.forEach(e => {
-            e.radius += 25 * delta;
-            e.opacity -= 0.4 * delta;
+            e.radius += 35 * delta; // Faster expansion
+            e.opacity -= 0.6 * delta; // Fade out
         });
         echoesRef.current = echoesRef.current.filter(e => e.opacity > 0);
         setEchoes([...echoesRef.current]);
@@ -300,13 +319,20 @@ function GameScene({ setGameState, setScore, setEnergy }: { setGameState: any, s
                 <group key={echo.id} position={echo.position}>
                     <pointLight 
                         color="#00e5ff" 
-                        intensity={echo.opacity * 10} 
-                        distance={echo.radius * 1.5} 
-                        decay={1.5}
+                        intensity={echo.opacity * 15} 
+                        distance={echo.radius * 1.2} 
+                        decay={2}
                     />
                     <mesh>
-                        <icosahedronGeometry args={[echo.radius, 2]} />
-                        <meshBasicMaterial color="#00e5ff" wireframe transparent opacity={echo.opacity * 0.15} />
+                        <sphereGeometry args={[echo.radius, 32, 16]} />
+                        <meshBasicMaterial 
+                            color="#00e5ff" 
+                            wireframe 
+                            transparent 
+                            opacity={echo.opacity * 0.2} 
+                            blending={THREE.AdditiveBlending}
+                            depthWrite={false}
+                        />
                     </mesh>
                 </group>
             ))}
@@ -328,13 +354,11 @@ function GameScene({ setGameState, setScore, setEnergy }: { setGameState: any, s
                 </mesh>
             ))}
 
-            {/* Walls */}
-            {walls.map((wall, i) => (
-                <mesh key={i} position={wall.position} scale={wall.scale}>
-                    <boxGeometry args={[1, 1, 1]} />
-                    <meshStandardMaterial color="#111111" roughness={0.9} />
-                </mesh>
-            ))}
+            {/* Walls (Instanced for Performance) */}
+            <instancedMesh ref={wallsRef} args={[undefined, undefined, walls.length]}>
+                <boxGeometry args={[1, 1, 1]} />
+                <meshStandardMaterial color="#111111" roughness={0.9} />
+            </instancedMesh>
 
             {/* Floor & Ceiling */}
             <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0, 0]}>
